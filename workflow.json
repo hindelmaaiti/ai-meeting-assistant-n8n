@@ -1,0 +1,173 @@
+{
+  "name": "AI Meeting Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=Tu es un assistant de gestion de réunions Google Calendar.\nRéponds dans la langue de l’utilisateur.\n\nDate et heure actuelles : {{ $now.setZone('Africa/Casablanca').toISO() }}\nFuseau horaire : Africa/Casablanca.\n\nSi le titre, la date, l’heure ou la durée manquent, demande les informations manquantes.\n\nRespecte exactement les horaires locaux demandés et confirmés par l’utilisateur. Ne retire et n’ajoute jamais une heure par supposition.\nUtilise des dates ISO 8601 avec le décalage correspondant à Africa/Casablanca à la date de la réunion.\nExemple pour le 5 novembre 2026 :\n- 10h00 : 2026-11-05T10:00:00+00:00\n- 10h30 : 2026-11-05T10:30:00+00:00\nCet exemple ne doit pas servir à imposer le même décalage à toutes les dates.\n\nPour une réunion avec des participants :\n1. Consulte Google Sheets pour récupérer NOM, EMAIL et EQUIPE.\n2. Sélectionne uniquement les personnes ou l’équipe demandées.\n3. N’invente jamais d’adresse email. Si un nom est ambigu ou absent, demande une précision.\n4. Présente le titre, la date, les horaires, les noms et les emails des participants.\n5. Attends la confirmation de l’utilisateur avant de créer la réunion et d’envoyer les invitations.\n6. Après confirmation, vérifie que Start et End correspondent exactement aux horaires confirmés.\n7. Crée un seul événement avec les participants confirmés dans Attendees.\n\nConfirme la création uniquement après le succès de Google Calendar.\nSi l’outil échoue, explique l’erreur sans annoncer de réussite.\nNe demande pas de délégué pour envoyer les invitations.\nNe prétends pas pouvoir modifier ou supprimer un événement si les outils correspondants ne sont pas disponibles."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "fe5ac51b-d6be-4571-a24c-1767e16ea7f6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openrouter/free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        224,
+        240
+      ],
+      "id": "836535ca-8ab9-476c-a3ee-3bfec7b32a9e",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        320,
+        416
+      ],
+      "id": "6d0ac6c1-c4da-4d92-99a8-02cb466495ec",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "YOUR_CALENDAR_ID",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', `Email du participant demandé par l’utilisateur, récupéré depuis Google Sheets. Ne jamais inventer d’adresse. En cas de noms similaires, demander une précision.`, 'string') }}"
+          ],
+          "sendUpdates": "all",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        240
+      ],
+      "id": "3a9cfa2b-265e-4a0f-97b9-f03712374929",
+      "name": "Create an event in Google Calendar"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ad3b8679-6cc8-440f-99ab-1f4f4663f431",
+      "name": "When chat message received",
+      "webhookId": "9402a327-5063-4b59-9f6d-fffba30ecd4b"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contacts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        112
+      ],
+      "id": "972c9cbd-8ec9-473e-b8a7-93c99e32ae6d",
+      "name": "Get row(s) in sheet in Google Sheets"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

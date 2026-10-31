@@ -1,4 +1,6 @@
 # AI Meeting Assistant — n8n
+![AI Meeting Assistant — Workflow n8n](workflow.png)
+
 
 Assistant conversationnel de préparation de réunions : recherche d’un contact dans Google Sheets, validation des participants dans le chat, puis création d’un événement Google Calendar et envoi d’une invitation.
 
